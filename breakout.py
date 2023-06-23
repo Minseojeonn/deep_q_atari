@@ -32,6 +32,7 @@ import torch.nn.functional as F
 import random
 from collections import deque
 from torchvision.transforms import Compose, Grayscale, Resize, ToTensor
+from PIL import Image
 
 # Replay memory capacity
 N = 1000
@@ -40,6 +41,7 @@ N = 1000
 epsilon = 1.0
 epsilon_decay = 0.99
 epsilon_min = 0.01
+batch_size = 128
 
 # Discount factor (gamma)
 gamma = 0.99
@@ -97,7 +99,7 @@ def select_action(state):
             q_values = Q(state)
         return torch.argmax(q_values).item()
 
-def update_Q_network():
+def update_Q_network(states, next_states, actions, rewards):
     if len(D) < batch_size:
         return
 
@@ -128,7 +130,7 @@ def update_Q_network():
     Q_target.load_state_dict(Q.state_dict())
 
 # Initialize sequence s1 = [1]
-s = [1]
+s = Image.open('./start.png').convert('RGB')
 
 
 pygame.init()
@@ -524,71 +526,172 @@ def print_highscore_board():
             yPos += 25
 
 #-----------------------------------------------------
-if __name__ == '__main__':
-    replay = False
-    loop = 0
-    try:
-        fontObj = pygame.font.Font('PressStart2P.ttf',24)
-    except:
-        fontObj = pygame.font.Font('freesansbold.ttf',24)
-    while True:
-        screen.fill(black)
-        if replay == True:
-            board = new_board()
-            score = 0
-            try:
-                fontObj = pygame.font.Font('PressStart2P.ttf',36)
-            except:
-                fontObj = pygame.font.Font('freesansbold.ttf',36)
-            paddle = Paddle()
-            ball = Ball()
-            while ball.remaining > 0:
-                score = game(score,paddle,ball,board,wall1)
-                
-                if ball.remaining == 0:
-                    for x in range(16):
-                        for y in range(12):
-                            pygame.draw.rect(screen,black,(x*40,y*40,40,40))
-                            pygame.display.update()
-                            pygame.time.wait(10)
-                            boardcheck = 0
-                    for x in range(len(board)):
-                        for y in range(len(board[x])):
-                            boardcheck += board[x][y]
-                    if boardcheck == 0:
-                        paddle = Paddle()
-                        ball = Ball()
-                        board = new_board()
-                        while ball.remaining > 0:
-                            score = game(score,paddle,ball,board,wall1)
-                            print(score)
-                            if ball.remaining == 0:
-                                for x in range(16):
-                                    for y in range(12):
-                                        pygame.draw.rect(screen,black,(x*40,y*40,40,40))
-                                        pygame.display.update()
-                                        pygame.time.wait(10)
-                     
-                    get_highscore(score)
-                    replay = False
-                    try:
-                        fontObj = pygame.font.Font('PressStart2P.ttf',24)
-                    except:
-                        fontObj = pygame.font.Font('freesansbold.ttf',24)
-        write(200,20,grey,'Highscores')
-        print_highscore_board()
-        if loop < 18:
-            write(80,400,grey,'-Press Enter To Play-')
-        elif loop == 30:
-            loop = 0
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-            elif event.type == KEYDOWN:
-                if event.key == K_RETURN:
-                    replay = True
-                  
-        loop += 1
-        pygame.display.update()
-      
+
+
+for episode in range(1, M+1):
+    # Preprocess state
+    s_preprocessed = preprocess(s).view(-1).numpy() # start State Picture
+    
+    
+    
+    ##GAME obejct states.
+    screen.fill(black)
+    board = new_board()
+    score = 0
+    paddle = Paddle()
+    ball = Ball()
+    
+    ##GAME
+    for t in range(1, T+1):
+        #starting variables
+        running = True
+        ball.alive = True
+        ball.moving = True
+        ball.x = 53
+        ball.y = 300
+        ball.collisions, ball.speed = 0,5
+        colO = False #check collision with the orange row, for speed purposes
+        colR = False #same but for red row
+        ball.speed = 5
+        ball.xPos = 1
+        ball.yPos = 1
+        ball.adjusted = False
+            
+        while running == True:
+            #Draw all the things------------------------------
+            screen.fill(black)
+            pygame.draw.rect(screen,grey,wall1)
+            pygame.draw.rect(screen,grey,wall2)
+            pygame.draw.rect(screen,grey,wall3)
+            pygame.draw.rect(screen,red,(ball.x-3,ball.y-3,6,6))
+            print_board(board,colors)
+            print_paddle(paddle)
+            write(20,20,grey,str(score))
+            temp = 0
+            for life in range(ball.remaining):
+                if life != 0:
+                    pygame.draw.rect(screen,red,(600,400-temp,10,10))
+                    temp += 15
+
+            #check all the collisions-------------------------
+            if ball.moving == True:
+                if ball.adjusted == False:
+                    ball.adjust()
+                ball.x += ball.xPos
+                ball.y += ball.yPos
+                if ball.y < 455 and ball.y > 445:
+                    if ball.x > paddle.x-20 and ball.x < paddle.x+20:
+                        ball.adjusted, ball.xPos, ball.yPos = collide_paddle(paddle,ball)#paddle collide
+                        ball.collisions += 1
+                        #increase ball speeds at 4 hits on paddle, 12 hits, orange row, red row
+                        if ball.collisions == 4:
+                            ball.speed += 1
+                        if ball.collisions == 12:
+                            ball.speed += 1
+                        #if ball hits the back wall, paddle cuts in half
+                #check wall collide----------------------------
+                if wall1.collidepoint(ball.x,ball.y) == True or wall2.collidepoint(ball.x,ball.y):
+                    ball.xPos = -(ball.xPos)
+                if wall3.collidepoint(ball.x,ball.y) == True:
+                    ball.yPos = -(ball.yPos)
+
+                #check collision with bricks-------------------
+                Break = False
+                for x in range(dx):
+                    for y in range(dy):
+                        if board[x][y] == 1:
+                            block = pygame.Rect(30*x+bx-1,12*y+by-1,32,14)
+                            if block.collidepoint(ball.x,ball.y) == True:
+                                board[x][y] = 0
+                                ball.yPos = -ball.yPos #Cheat
+                                if y == 4 or y == 5:
+                                    score += 1
+                                    r += 1
+                                elif y == 2 or y == 3:
+                                    score += 4
+                                    r += 4
+                                    if colO == False:
+                                        colO = True
+                                        ball.speed+= 1
+                                else:
+                                    score += 7
+                                    if colR == False:
+                                        colR= True
+                                        ball.speed+= 2
+                                    r += 7
+                                Break = True
+                        if Break == True:
+                            break
+                    if Break == True:
+                        break
+                if ball.y > 460:
+                    ball.alive = False
+            
+            #check if ball was lost
+            if ball.alive == False:
+                running = False
+                ball.remaining -= 1
+                r = -1
+            
+            #move paddle
+            if paddle.direction == 'right':
+                if paddle.x <= 561:
+                    paddle.x += 8
+            elif paddle.direction == 'left':
+                if paddle.x >= 79:
+                    paddle.x -= 8
+
+            # Select action with epsilon-greedy strategy
+            action = select_action(s_preprocessed) 
+            
+            if action == 0:
+                paddle.direction = 'none'
+            if action == 1:
+                paddle.direction = 'left'
+            if action == 2:
+                paddle.direction = 'right'
+            
+            #update display
+            pygame.display.update()
+            pixels = pygame.surfarray.array3d(screen)
+            pixels = Image.fromarray(pixels)
+          
+
+            # Execute action and observe reward and next state
+            # Replace the following lines with your own emulator and state transition logic
+            r = 0
+            x_plus_1 = None
+            s_next = pixels
+
+            # Preprocess next state
+            s_next_preprocessed = preprocess(s_next).view(-1).numpy()
+
+            # Store transition in replay memory D
+            D.append((s_preprocessed, action, r, s_next_preprocessed))
+
+            # Update Q-network
+            update_Q_network(states = s_preprocessed, next_states = s_next_preprocessed, actions = action, rewards = r)
+
+            # Update current state
+            s = s_next
+            s_preprocessed = s_next_preprocessed
+            
+            
+            #print(tensor.shape)
+            fpsClock.tick(15) 
+
+            
+   
+
+
+    #Game End object
+    pygame.display.update()
+    if ball.remaining == 0:
+            boardcheck = 0
+            for x in range(len(board)):
+                for y in range(len(board[x])):
+                    boardcheck += board[x][y]
+    
+    # Decay epsilon
+    if epsilon > epsilon_min:
+        epsilon *= epsilon_decay
