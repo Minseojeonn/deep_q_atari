@@ -709,7 +709,7 @@ for episode in range(1, M+1):
         sum_rs.append(sum_r)
         episode_num.append(episode)
         sum_r = 0
-        plt.plot(sum_rs, episode_num)
+        plt.plot(episode_num, sum_rs)
         plt.xlabel('Time Steps')
         plt.ylabel('Episode-30')
         plt.legend()
