@@ -539,7 +539,8 @@ def print_highscore_board():
 #-----------------------------------------------------
 
 sum_r = 0
-time_step = []
+sum_rs = []
+episode_num = []
 for episode in range(1, M+1):
     # Preprocess state
     s_preprocessed = preprocess(s).view(-1).numpy() # start State Picture
@@ -705,9 +706,10 @@ for episode in range(1, M+1):
         with open('Q_target.pkl', 'wb') as f:
             pickle.dump(Q_target,f,protocol=pickle.HIGHEST_PROTOCOL)    
     if episode%10 == 0:    
-        time_step.append(episode)
+        sum_rs.append(sum_r)
+        episode_num.append(episode)
         sum_r = 0
-        plt.plot(time_step, episode)
+        plt.plot(sum_rs, episode_num)
         plt.xlabel('Time Steps')
         plt.ylabel('Episode-30')
         plt.legend()

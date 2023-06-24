@@ -128,11 +128,7 @@ class wind_glide_q:
         return time_steps
             
 
-# 학습된 Q 테이블 출력
-# print("Learned Q-table:")
-# wind = wind_glide_q()
-# wind.simulation_start(1000)
-# print(wind.Q)
+
 
 
 
