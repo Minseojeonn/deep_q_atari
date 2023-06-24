@@ -42,7 +42,7 @@ from PIL import Image
 N = 10000
 
 # Exploration rate (epsilon)
-epsilon = 0.1
+epsilon = 0.5
 epsilon_decay = 0.5
 epsilon_min = 0.01
 batch_size = 128
