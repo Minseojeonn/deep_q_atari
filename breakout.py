@@ -29,8 +29,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import pickle
 import random
 from collections import deque
+import os
 from torchvision.transforms import Compose, Grayscale, Resize, ToTensor
 from PIL import Image
 
@@ -38,7 +40,7 @@ from PIL import Image
 N = 10000
 
 # Exploration rate (epsilon)
-epsilon = 0.05
+epsilon = 0.1
 epsilon_decay = 0.5
 epsilon_min = 0.01
 batch_size = 128
@@ -81,6 +83,12 @@ state_size = 6561
 Q = QNetwork(state_size, action_size)
 Q_target = QNetwork(state_size, action_size)
 optimizer = optim.Adam(Q.parameters(), lr=0.001)
+
+if os.path.isfile("Q.pkl"):
+    with open('Q.pkl', 'rb') as f:
+        Q = pickle.load(f)
+    with open('Q_target.pkl', 'rb') as f:
+        Q_target = pickle.load(f) 
 
 # Move Q-network to GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -685,6 +693,12 @@ for episode in range(1, M+1):
         #print(tensor.shape)
         fpsClock.tick(100) 
     print(episode ,":r=",r)
+    
+    if episode%100 == 0:
+        with open('Q.pkl', 'wb') as f:
+            pickle.dump(Q,f,protocol=pickle.HIGHEST_PROTOCOL)
+        with open('Q_target.pkl', 'wb') as f:
+            pickle.dump(Q_target,f,protocol=pickle.HIGHEST_PROTOCOL)    
             
    
 
