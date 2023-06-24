@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 class wind_glide_q:
     def __init__(self):                
@@ -27,6 +28,39 @@ class wind_glide_q:
         row = state // self.num_columns
         column = state % self.num_columns
         return row, column
+
+    def print_optimal_policy(self):
+        optimal_policy = np.zeros((self.num_rows, self.num_columns), dtype=str)
+        
+        for state in range(self.num_states):
+            row, column = self.state_to_coordinates(state)
+            
+            if state == self.coordinates_to_state(3, 7):
+                optimal_policy[row, column] = 'G'  # Goal state
+                continue
+            
+            best_action = np.argmax(self.Q[state])
+            
+            if best_action == 0:  # Up
+                optimal_policy[row, column] = '↑'
+            elif best_action == 1:  # Down
+                optimal_policy[row, column] = '↓'
+            elif best_action == 2:  # Right
+                optimal_policy[row, column] = '→'
+            elif best_action == 3:  # Left
+                optimal_policy[row, column] = '←'
+        
+        for row in range(self.num_rows):
+            for column in range(self.num_columns):
+                print(optimal_policy[row, column], end=' ')
+            print()
+
+        with open('q_wind_q_optimal_policy.pkl','wb') as f:
+            pickle.dump(optimal_policy, f)
+        with open('q_wind_q.pkl','wb') as f:
+            pickle.dump(self.Q, f)    
+
+
 
     # 좌표를 상태 인덱스로 변환하는 함수
     def coordinates_to_state(self, row, column):
@@ -89,10 +123,16 @@ class wind_glide_q:
                 state = next_state
                 time_step += 1
             time_steps.append(time_step)
+        print("Learned Q-table:")    
+        print(self.Q)    
         return time_steps
             
 
-
+# 학습된 Q 테이블 출력
+# print("Learned Q-table:")
+# wind = wind_glide_q()
+# wind.simulation_start(1000)
+# print(wind.Q)
 
 
 

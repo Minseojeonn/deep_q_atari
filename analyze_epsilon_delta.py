@@ -9,13 +9,14 @@ from wind_glide_sarsa import wind_glide_sarsa
 if __name__ == "__main__":
     num_episodes = 170  # 에피소드 수 설정
     
-    # Sarsa 학습
+    # Sarsa 학습  # Q-learning 학습
     Sarsa = wind_glide_sarsa()
-
-    # Q-learning 학습
     q = wind_glide_q()
     time_steps_sarsa = Sarsa.simulation_start(num_episodes)
+    Sarsa.print_optimal_policy()
+
     time_steps_q_learning = q.simulation_start(num_episodes)
+    q.print_optimal_policy()
 
     # 에피소드별 시간 단계 수 그래프 그리기
     episodes = np.arange(1, num_episodes + 1)
