@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     # 에피소드별 시간 단계 수 그래프 그리기
     episodes = np.arange(1, num_episodes + 1)
-    plt.plot( time_steps_sarsa, episodes,label='Sarsa')
+    plt.plot(time_steps_sarsa, episodes,label='Sarsa')
     plt.plot(time_steps_q_learning, episodes, label='Q-learning')
     plt.xlabel('Time Steps')
     plt.ylabel('Episodes')

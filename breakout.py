@@ -28,6 +28,7 @@ from pygame.locals import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import pickle
 import random
@@ -35,6 +36,7 @@ from collections import deque
 import os
 from torchvision.transforms import Compose, Grayscale, Resize, ToTensor
 from PIL import Image
+
 
 # Replay memory capacity
 N = 10000
@@ -536,7 +538,8 @@ def print_highscore_board():
 
 #-----------------------------------------------------
 
-
+sum_r = 0
+time_step = []
 for episode in range(1, M+1):
     # Preprocess state
     s_preprocessed = preprocess(s).view(-1).numpy() # start State Picture
@@ -566,6 +569,7 @@ for episode in range(1, M+1):
     ball.yPos = 1
     ball.adjusted = False
     r = 0        
+    
     while running == True:
         #Draw all the things------------------------------
         screen.fill(black)
@@ -693,24 +697,26 @@ for episode in range(1, M+1):
         #print(tensor.shape)
         fpsClock.tick(100) 
     print(episode ,":r=",r)
-    
-    if episode%100 == 0:
+
+    sum_r = sum_r + r
+    if episode%50 == 0:
         with open('Q.pkl', 'wb') as f:
             pickle.dump(Q,f,protocol=pickle.HIGHEST_PROTOCOL)
         with open('Q_target.pkl', 'wb') as f:
             pickle.dump(Q_target,f,protocol=pickle.HIGHEST_PROTOCOL)    
-            
-   
+    if episode%10 == 0:    
+        time_step.append(episode)
+        sum_r = 0
+        plt.plot(time_step, episode)
+        plt.xlabel('Time Steps')
+        plt.ylabel('Episode-30')
+        plt.legend()
+        plt.savefig('deep_q_atari.png')
 
 
-    #Game End object
-    pygame.display.update()
-    if ball.remaining == 0:
-            boardcheck = 0
-            for x in range(len(board)):
-                for y in range(len(board[x])):
-                    boardcheck += board[x][y]
     
+
+
     # Decay epsilon
     if epsilon > epsilon_min:
         epsilon *= epsilon_decay

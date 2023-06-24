@@ -98,11 +98,5 @@ class wind_glide_sarsa:
             time_steps.append(time_step)
         return time_steps
 
-# 학습된 Q 테이블 출력
-# print("Learned Q-table:")
-# wind = wind_glide_sarsa()
-# wind.simulation_start(1000)
-# print(wind.Q)
-
 
 
