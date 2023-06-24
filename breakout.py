@@ -35,16 +35,16 @@ from torchvision.transforms import Compose, Grayscale, Resize, ToTensor
 from PIL import Image
 
 # Replay memory capacity
-N = 1000
+N = 10000
 
 # Exploration rate (epsilon)
 epsilon = 0.05
-epsilon_decay = 0.99
+epsilon_decay = 0.5
 epsilon_min = 0.01
 batch_size = 128
 
 # Discount factor (gamma)
-gamma = 0.99
+gamma = 0.8
 
 # Define Q-network
 class QNetwork(nn.Module):
@@ -70,7 +70,7 @@ preprocess = Compose([
 ])
 
 # Episode and time steps
-M = 100
+M = 100000
 #T = 100
 
 # Define action and state sizes
@@ -271,6 +271,7 @@ def game(score,paddle,ball,board,wall1): #The game itself
                 if ball.x > paddle.x-20 and ball.x < paddle.x+20:
                     ball.adjusted, ball.xPos, ball.yPos = collide_paddle(paddle,ball)#paddle collide
                     ball.collisions += 1
+                    r += 1
                     #increase ball speeds at 4 hits on paddle, 12 hits, orange row, red row
                     if ball.collisions == 4:
                         ball.speed += 1
@@ -585,6 +586,7 @@ for episode in range(1, M+1):
                 if ball.x > paddle.x-20 and ball.x < paddle.x+20:
                     ball.adjusted, ball.xPos, ball.yPos = collide_paddle(paddle,ball)#paddle collide
                     ball.collisions += 1
+                    r+=1
                     #increase ball speeds at 4 hits on paddle, 12 hits, orange row, red row
                     if ball.collisions == 4:
                         ball.speed += 1
@@ -682,7 +684,7 @@ for episode in range(1, M+1):
         
         #print(tensor.shape)
         fpsClock.tick(100) 
-    print(r)
+    print(episode ,":r=",r)
             
    
 
